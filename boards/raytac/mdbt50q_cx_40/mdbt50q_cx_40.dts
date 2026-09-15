@@ -1,0 +1,110 @@
+/*
+ * The CX-40 ships with Nordic's built-in Open bootloader (nRF5 SDK).
+ * No SoftDevice, no UF2 — flashing is nrfutil DFU over USB serial.
+ *
+ * Pin assignments cross-checked against Raytac's own Zephyr board definition,
+ * boards/raytac/mdbt50q_cx_40_dongle in zephyrproject-rtos/zephyr.
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+
+/ {
+    model = "Raytac MDBT50Q-CX-40";
+    compatible = "raytac,mdbt50q-cx-40";
+
+    chosen {
+        /*
+         * zephyr,sram is NOT optional: CONFIG_SRAM_SIZE defaults to
+         * dt_chosen_reg_size_int(zephyr,sram, 0, K), so omitting it silently
+         * sets the linker's RAM region to 0 and every build "overflows".
+         */
+        zephyr,sram = &sram0;
+        zephyr,flash = &flash0;
+        zephyr,code-partition = &code_partition;
+    };
+
+    leds {
+        compatible = "gpio-leds";
+        led0_d1: led_0 {
+            gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+            label = "Green LED D1";
+        };
+        led1_d2: led_1 {
+            gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+            label = "Red LED D2";
+        };
+    };
+
+    buttons {
+        compatible = "gpio-keys";
+        button0: button_0 {
+            gpios = <&gpio1 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "Push button switch";
+            zephyr,code = <INPUT_KEY_0>;
+        };
+    };
+
+    aliases {
+        sw0 = &button0;
+        led0 = &led0_d1;
+        led1 = &led1_d2;
+    };
+};
+
+/* v0.3 set BOARD_ENABLE_DCDC=y; HWMv2 moves that to devicetree. */
+&reg1 {
+    regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&gpio0 {
+    status = "okay";
+};
+
+&gpio1 {
+    status = "okay";
+};
+
+&gpiote {
+    status = "okay";
+};
+
+zephyr_udc0: &usbd {
+    compatible = "nordic,nrf-usbd";
+    status = "okay";
+};
+
+/*
+ * Flash layout for the stock Nordic nRF5 Open Bootloader.
+ *   0x000000 - 0x001000  Nordic MBR (4K, factory programmed)
+ *   0x001000 - 0x0ed000  Application (944K)
+ *   0x0ed000 - 0x0f4000  Settings storage (28K, 7 pages)
+ *   0x0f4000 - 0x100000  Nordic bootloader + its settings pages (48K)
+ */
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mbr_partition: partition@0 {
+			label = "MBR";
+			reg = <0x00000000 DT_SIZE_K(4)>;
+		};
+
+		code_partition: partition@1000 {
+			label = "Application";
+			reg = <0x00001000 DT_SIZE_K(944)>;
+		};
+
+		storage_partition: partition@ed000 {
+			label = "storage";
+			reg = <0x000ed000 DT_SIZE_K(28)>;
+		};
+
+		boot_partition: partition@f4000 {
+			label = "Nordic Bootloader";
+			reg = <0x000f4000 DT_SIZE_K(48)>;
+		};
+	};
+};

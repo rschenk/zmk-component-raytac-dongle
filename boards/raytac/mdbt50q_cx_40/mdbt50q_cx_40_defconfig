@@ -1,0 +1,38 @@
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# No console by default. The CX-40 exposes no debug UART and ZMK doesn't need
+# one; a USB CDC ACM console costs RAM and a USB interface. Override these in
+# your own .conf if you want USB logging or ZMK Studio over USB.
+CONFIG_CONSOLE=n
+CONFIG_SERIAL=n
+CONFIG_UART_CONSOLE=n
+CONFIG_UART_INTERRUPT_DRIVEN=n
+
+# HID transports
+CONFIG_ZMK_USB=y
+CONFIG_ZMK_BLE=y
+
+# Settings storage, for BLE pairings and ZMK Studio changes
+CONFIG_MPU_ALLOW_FLASH_WRITE=y
+CONFIG_NVS=y
+CONFIG_SETTINGS_NVS=y
+CONFIG_FLASH=y
+CONFIG_FLASH_PAGE_LAYOUT=y
+CONFIG_FLASH_MAP=y
+# storage_partition is 28K, i.e. 7 erase pages
+CONFIG_SETTINGS_NVS_SECTOR_COUNT=7
+
+# The Nordic Open Bootloader takes a plain hex over USB DFU and has no UF2
+# support, so link against the DT code partition (0x1000) and emit hex.
+CONFIG_USE_DT_CODE_PARTITION=y
+CONFIG_BUILD_OUTPUT_HEX=y
+
+# Use maximum Bluetooth transmit power.
+CONFIG_BT_CTLR_TX_PWR_PLUS_8=y
